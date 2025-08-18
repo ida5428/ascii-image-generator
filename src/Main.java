@@ -1,13 +1,16 @@
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Scanner;
-import javax.imageio.ImageIO;
 
 public class Main {
-   // The ASCII density map corresponding to the brightness
-   static final String ASCII_DENSITY = " $@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+   // Options the user can change
+   static String asciiDensity = " .:-=+*#%@"; // The ASCII density map
+   static boolean flippedMap = false; // Whether to flip the ASCII density map
+   static int threshold = 1; // The threshold for ...
+   static int maxWidth = 70; // The max. width a generated image can take
 
    // ANSI escape codes for colours
    static final String RESET = "\u001B[0;49m";
@@ -16,9 +19,9 @@ public class Main {
    static final String YELLOW = "\u001B[93m";
    static final String BLUE = "\u001B[94m";
 
-   static final int MAX_WIDTH = 88;
-
    public static void main(String[] args) {
+
+      System.out.print("\033[2J\033[3J\033[H");
 
       try (Scanner input = new Scanner(System.in)) {
          File[] imageFiles = new File("images").listFiles(
@@ -37,29 +40,31 @@ public class Main {
          }
 
          int fileIndex;
+
          while (true) {
             print(GREEN, " > ");
             String fileIndexString = input.nextLine().trim();
 
             if (fileIndexString.isEmpty()) {
                clearLine(1);
-            } else {
-               try {
-                  fileIndex = Integer.parseInt(fileIndexString);
-               } catch (NumberFormatException e) {
-                  clearLine(1);
-                  System.out.print(colour(GREEN, " > ") + fileIndexString + colour(RED, "\r\u001B[40C Please enter a valid file number.\n"));
-                  continue;
-               }
-
-               if (fileIndex > 0 && fileIndex <= imageFiles.length) {
-                  print(GREEN, "Converting " + imageFiles[fileIndex - 1].getName() + " to ASCII...\n");
-                  break;
-               } else {
-                  clearLine(1);
-                  System.out.print(colour(GREEN, " > ") + fileIndexString + colour(RED, "\r\u001B[40C This file does not exist, please pick one from the above list.\n"));
-               }
+               continue;
             }
+
+            try {
+               fileIndex = Integer.parseInt(fileIndexString);
+            } catch (NumberFormatException e) {
+               clearLine(1);
+               System.out.print(colour(GREEN, " > ") + fileIndexString + colour(RED, "\r\u001B[40C Please enter a valid file number.\n"));
+               continue;
+            }
+
+            if (fileIndex > 0 && fileIndex <= imageFiles.length) {
+               print(GREEN, "Converting " + imageFiles[fileIndex - 1].getName() + " to ASCII...\n");
+               break;
+            }
+
+            clearLine(1);
+            System.out.print(colour(GREEN, " > ") + fileIndexString + colour(RED, "\r\u001B[40C This file does not exist, please pick one from the above list.\n"));
          }
 
          try {
@@ -68,34 +73,27 @@ public class Main {
             int imageHeight = image.getHeight();
             int imageWidth = image.getWidth();
 
-            int imageScale = Math.max(1, imageWidth / MAX_WIDTH); // Avoid division by zero
-            String[] asciiRows = new String[imageHeight];
+            int imageScale = imageWidth / maxWidth;
 
             for (int y = 0; y < imageHeight; y += imageScale) {
                for (int x = 0; x < imageWidth; x += imageScale) {
                   int pixel = image.getRGB(x, y);
                   int alpha = (pixel >> 24) & 0xFF;
-
-                  // Ensure asciiRows[y] is initialized
-                  if (asciiRows[y] == null) {
-                     asciiRows[y] = "";
-                  }
+                  int red = (pixel >> 16) & 0xFF;
+                  int green = (pixel >> 8) & 0xFF;
+                  int blue = pixel & 0xFF;
+                  int brightness = (red + green + blue) / 3;
 
                   if (alpha == 0) {
-                     asciiRows[y] += "  ";
+                     System.out.print("  ");
+                  } else if (brightness >= 253) {
+                     System.out.print("  ");
                   } else {
-                     int red = (pixel >> 16) & 0xFF;
-                     int green = (pixel >> 8) & 0xFF;
-                     int blue = pixel & 0xFF;
-                     int brightness = (red + green + blue) / 3;
-                     int pixelIndex = (int) Math.floor(brightness * (ASCII_DENSITY.length() - 1) / 255);
-                     asciiRows[y] += ASCII_DENSITY.charAt(pixelIndex) + " ";
+                     int pixelIndex = (int) Math.floor(brightness * (asciiDensity.length() - 1) / 255);
+                     System.out.print(asciiDensity.charAt(pixelIndex) + " ");
                   }
                }
-
-               if (!asciiRows[y].trim().isEmpty()) {
-                  System.out.println(asciiRows[y]);
-               }
+               System.out.print("\n");
             }
          } catch (IOException e) {
             System.out.println(colour(RED, "Failed to read the image."));

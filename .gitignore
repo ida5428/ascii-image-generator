@@ -30,3 +30,6 @@ replay_pid*
 
 # Misc.
 .DS_Store
+
+# Compiled class file directory
+bin/
