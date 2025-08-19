@@ -5,19 +5,12 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.Scanner;
 
+import static utils.Formatting.*;
+
 public class Main {
    // Options the user can change
    static String asciiDensity = " .:-=+*#%@"; // The ASCII density map
-   static boolean flippedMap = false; // Whether to flip the ASCII density map
-   static int threshold = 1; // The threshold for ...
    static int maxWidth = 70; // The max. width a generated image can take
-
-   // ANSI escape codes for colours
-   static final String RESET = "\u001B[0;49m";
-   static final String RED = "\u001B[91m";
-   static final String GREEN = "\u001B[92m";
-   static final String YELLOW = "\u001B[93m";
-   static final String BLUE = "\u001B[94m";
 
    public static void main(String[] args) {
 
@@ -98,20 +91,6 @@ public class Main {
          } catch (IOException e) {
             System.out.println(colour(RED, "Failed to read the image."));
          }
-      }
-   }
-
-   public static void print(String colour, String text) {
-      System.out.print(colour + text + RESET);
-   }
-
-   public static String colour(String colour, String text) {
-      return String.format("%s%s%s", colour, text, RESET);
-   }
-
-   public static void clearLine(int clearLineCount) {
-      for (int i = 0; i < clearLineCount; i++) {
-         System.out.print("\033[1A\033[2K");
       }
    }
 }
